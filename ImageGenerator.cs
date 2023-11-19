@@ -99,10 +99,7 @@ public class ImageGenerator : MonoBehaviour
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
         await www.SendWebRequest();
-        if (Application.isPlaying == false)
-        {
-            return null; // stop execution of current async method. May have to handle calling methods properly.
-        }
+
         // Handle response
         if (www.result == UnityWebRequest.Result.Success)
         {

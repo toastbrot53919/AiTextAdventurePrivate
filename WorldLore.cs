@@ -40,6 +40,7 @@ public class WorldLore : MonoBehaviour
 public class crossRef
 {
     public TreeNode node;
+
     public string relationDescripton;
 
 }
@@ -86,7 +87,7 @@ public class World : TreeNode
 {
     public World(string name, string description) : base(name, description)
     {
-        
+
     }
 
     // Spezifische Methoden und Eigenschaften für die Welt-Ebene...
@@ -164,8 +165,7 @@ public class TreeManager
     // Suchfunktion, um Knoten im Baum zu finden...
     public TreeNode FindNode(string name)
     {
-        // Implementierung der Suchfunktion...
-        return null;
+        return FindNodeRecursive(Root, name);
     }
     public string returnWorldString(TreeNode leaveNode)
     {
@@ -191,7 +191,7 @@ public class TreeManager
         return s;
     }
 
-    public Area returnRandomLocal()
+    public Area returnRandomLocal(TreeNode Root)
     {
         if (Root == null)
         {
@@ -221,7 +221,7 @@ public class TreeManager
 
     private void collectLeaves(TreeNode node, List<TreeNode> leaves)
     {
-
+        Debug.Log("Node type: " + node.type);
         if (node.type == "Area")
         {
             leaves.Add(node);
@@ -237,8 +237,42 @@ public class TreeManager
         }
     }
 
+    private TreeNode FindNodeRecursive(TreeNode currentNode, string name)
+    {
+        // If the current node matches, return it
+        if (currentNode.Name == name)
+        {
+            return currentNode;
+        }
 
+        // Recursively check each child
+        foreach (TreeNode child in currentNode.Children)
+        {
+            TreeNode foundNode = FindNodeRecursive(child, name);
+            if (foundNode != null)
+            {
+                // Node found in subtree
+                return foundNode;
+            }
+        }
+
+        // Node not found in this subtree
+        return null;
+    }
     // Weitere Verwaltungs- und Hilfsfunktionen...
+    public void addRelationsship(TreeNode node, TreeNode node2, string description)
+    {
+        crossRef crossRef = new crossRef();
+        crossRef.node = node2;
+        crossRef.relationDescripton = description;
+        node.relations.Add(crossRef);
+
+        crossRef crossRef2 = new crossRef();
+        crossRef2.node = node;
+        crossRef2.relationDescripton = description;
+        node2.relations.Add(crossRef2);
+
+    }
 }
 public class CharactersManager
 {

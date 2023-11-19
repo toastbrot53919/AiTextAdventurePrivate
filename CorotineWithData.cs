@@ -1,25 +1,31 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Networking;
-
 public class CoroutineWithData
 {
-    public Coroutine coroutine { get; private set; }
-    public object result;
-    private IEnumerator target;
+    private MonoBehaviour owner;
+    private TaskCompletionSource<object> tcs;
 
-    public CoroutineWithData(MonoBehaviour owner, IEnumerator target)
+    public CoroutineWithData(MonoBehaviour owner)
     {
-        this.target = target;
-        this.coroutine = owner.StartCoroutine(Run());
+        this.owner = owner;
+        tcs = new TaskCompletionSource<object>();
     }
 
-    private IEnumerator Run()
+    public Task<object> Run(IEnumerator coroutine)
     {
-        while (target.MoveNext())
+        owner.StartCoroutine(RunCoroutine(coroutine));
+        return tcs.Task;
+    }
+
+    private IEnumerator RunCoroutine(IEnumerator coroutine)
+    {
+        while (coroutine.MoveNext())
         {
-            result = target.Current;
-            yield return result;
+            yield return coroutine.Current;
         }
+        tcs.SetResult(null); // This is where you would set the result of the coroutine
     }
 }
+

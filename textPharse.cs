@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 public static class textPharse
 {
@@ -32,6 +34,10 @@ public static class textPharse
         {
             return true;
         }
+        if (machineText.Contains("Nein"))
+        {
+            return true;
+        }
         return false;
 
     }
@@ -46,7 +52,6 @@ public static class textPharse
 
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
         try
         {
@@ -56,7 +61,6 @@ public static class textPharse
 
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
         try
         {
@@ -65,7 +69,6 @@ public static class textPharse
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
         try
         {
@@ -74,7 +77,6 @@ public static class textPharse
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
         try
         {
@@ -83,7 +85,6 @@ public static class textPharse
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
         try
         {
@@ -92,7 +93,6 @@ public static class textPharse
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
         try
         {
@@ -101,7 +101,6 @@ public static class textPharse
         }
         catch (Exception e)
         {
-            Debug.LogError(e);
         }
 
         return result;
@@ -375,5 +374,57 @@ public static class textPharse
         }
         return items;
     }
+    public static string ParseRemoveNumber(string listText)
+    {
+        var lines = listText.Split('\n');
+        var cleanedLines = lines.Select(line =>
+        {
+            // Find the position of the first dot in the line
+            int dotIndex = line.IndexOf('.');
+            if (dotIndex != -1)
+            {
+                var substringBeforeDot = line.Substring(0, dotIndex).Trim();
+                if (substringBeforeDot.All(char.IsDigit))
+                {
+                    // Remove the numbering and the dot, and trim any leading/trailing spaces
+                    return line.Substring(dotIndex + 1).Trim();
+                }
+            }
+            return line;
+        });
+        return string.Join(" ", cleanedLines);
+    }
 
+    public static ParsedPhrase ParsePhrase(string phrase)
+    {
+        ParsedPhrase result = new ParsedPhrase();
+
+        var subjectMatch = Regex.Match(phrase, @"Subject:\s*(.*)");
+        var verbMatch = Regex.Match(phrase, @"Verb:\s*(.*)");
+        var objectMatch = Regex.Match(phrase, @"Object:\s*(.*)");
+
+        if (subjectMatch.Success)
+        {
+            result.Subject = subjectMatch.Groups[1].Value.Trim();
+        }
+        if (verbMatch.Success)
+        {
+            result.Verb = verbMatch.Groups[1].Value.Trim();
+        }
+        if (objectMatch.Success)
+        {
+            result.Object = objectMatch.Groups[1].Value.Trim();
+        }
+
+        return result;
+
+        return result;
+    }
+
+}
+public class ParsedPhrase
+{
+    public string Subject { get; set; }
+    public string Verb { get; set; }
+    public string Object { get; set; }
 }

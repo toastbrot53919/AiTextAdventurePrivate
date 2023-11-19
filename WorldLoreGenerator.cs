@@ -21,76 +21,89 @@ public class WorldLoreGenerator : MonoBehaviour
 
 
 
-    public void Start(){
+    public void Start()
+    {
         treeManager = new TreeManager(worldLore.WorldHeadNode);
     }
 
     public async Task FillTree(TreeNode worldRoot)
     {
-        TreeManager treeManager = new TreeManager(worldLore.WorldHeadNode);
-        await FillLevel(worldRoot, 1, "Region");  // Angenommen, wir wollen 3 Regionen generieren
-        foreach (Region regionNode in worldRoot.Children)
+        try
         {
-            await FillLevel(regionNode, 1, "Area" );  // Angenommen, wir wollen 3 Lokale pro Region generieren
+            TreeManager treeManager = new TreeManager(worldLore.WorldHeadNode);
+            await FillLevel(worldRoot, 1, "Region");  // Angenommen, wir wollen 3 Regionen generieren
+            foreach (Region regionNode in worldRoot.Children)
+            {
+                await FillLevel(regionNode, 1, "Area");  // Angenommen, wir wollen 3 Lokale pro Region generieren
+            }
         }
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
+
     }
 
     // Ähnliche Methoden für die restlichen Ebenen...
 
     public async Task FillLevel(TreeNode parent, int numberOfChildren, string levelType)
     {
-        string siblingsSummary = string.Empty;
- 
-        string prompt = GeneratePrompt(levelType, parent, numberOfChildren);
-        if (Application.isPlaying == false)
+
+        try
         {
-            return;
-        }
-        int tryCounter = 0;
-        List<(string, string)> children = new List<(string, string)>();
-        string childListText = "";
-        while (tryCounter < 5)
-        {
-            childListText = await textGenerator.SendPrompt(prompt, 100);
-            // Parsen der Kinderliste
-            children = textPharse.ParseDoubleEntryList(childListText);
-            if(children.Count==0){
-                tryCounter++;
-                Debug.LogError("List Reading ERROR TRY: "+tryCounter);
-                
-            }
-            else{
-                Debug.LogError("List Reading Succses");
-                break;
-            }
-        }
-        // Parsen der Kinderliste
-        string helpString="";
-        foreach (var childstring in children)
-        {
-            TreeNode childNode;
-            switch (levelType)
+            string siblingsSummary = string.Empty;
+
+            string prompt = GeneratePrompt(levelType, parent, numberOfChildren);
+  
+            int tryCounter = 0;
+            List<(string, string)> children = new List<(string, string)>();
+            string childListText = "";
+            while (tryCounter < 5)
             {
-                case "Region":
-                    childNode = new Region(childstring.Item1, childstring.Item2);
+                childListText = await textGenerator.SendPrompt(prompt, 100);
+                // Parsen der Kinderliste
+                children = textPharse.ParseDoubleEntryList(childListText);
+                if (children.Count == 0)
+                {
+                    tryCounter++;
+                    Debug.LogError("List Reading ERROR TRY: " + tryCounter);
+
+                }
+                else
+                {
+                    Debug.LogError("List Reading Succses");
                     break;
-                case "Area":
-                    childNode = new Area(childstring.Item1, childstring.Item2);
-                    break;
-                default:
-                    throw new ArgumentException("Unknown level type.");
+                }
             }
-            parent.AddChild(childNode);
-            helpString +=childstring.Item1+", "+childstring.Item2+"\n";
+            // Parsen der Kinderliste
+            string helpString = "";
+            foreach (var childstring in children)
+            {
+                TreeNode childNode;
+                switch (levelType)
+                {
+                    case "Region":
+                        childNode = new Region(childstring.Item1, childstring.Item2);
+                        break;
+                    case "Area":
+                        childNode = new Area(childstring.Item1, childstring.Item2);
+                        break;
+                    default:
+                        throw new ArgumentException("Unknown level type.");
+                }
+                parent.AddChild(childNode);
+                helpString += childstring.Item1 + ", " + childstring.Item2 + "\n";
+            }
+            // Nachdem alle Kinder generiert wurden, erstellen Sie eine Zusammenfassung
+            // parent.childrenSummary = await SummaryGenerator.GenerateChildSummary(textGenerator, helpString);
+            parent.shortDesc = await SummaryGenerator.GenerateExtendedSummary(textGenerator, parent.Description, helpString);
         }
-        // Nachdem alle Kinder generiert wurden, erstellen Sie eine Zusammenfassung
-       // parent.childrenSummary = await SummaryGenerator.GenerateChildSummary(textGenerator, helpString);
-        parent.shortDesc = await SummaryGenerator.GenerateExtendedSummary(textGenerator, parent.Description, helpString);
-
-
-        treeUI.RenderTree();
+        catch (Exception e)
+        {
+            Debug.LogError(e);
+        }
     }
-    
+
 
     public string GeneratePrompt(string levelType, TreeNode parentNode, int numberOfChildren)
     {
